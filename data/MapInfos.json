@@ -1,0 +1,8 @@
+[
+null,
+{"id":1,"expanded":true,"name":"world_map","order":1,"parentId":0,"scrollX":5456.4,"scrollY":3832.7999999999997},
+{"id":2,"expanded":false,"name":"始まりの街","order":2,"parentId":1,"scrollX":1445.3333333333333,"scrollY":861.3333333333334},
+{"id":3,"expanded":false,"name":"MAP003","order":3,"parentId":1,"scrollX":1445.3333333333333,"scrollY":861.3333333333334},
+{"id":4,"expanded":false,"name":"toNight","order":5,"parentId":0,"scrollX":650.4,"scrollY":387.59999999999997},
+{"id":5,"expanded":false,"name":"The test world","order":4,"parentId":1,"scrollX":1445.3333333333333,"scrollY":861.3333333333334}
+]
