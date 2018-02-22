@@ -8,7 +8,9 @@
 // 102 = user_name
 // 126^150 area
 // 126=area_id, 127=area_status, 
+// 130=users_mst_id, 131=area_user_name, 132=areaBoss_id, 
 // 151^200 tmp
+// 151=所持金, 152=必要な料金, 
 // 201^249 会話文章変数
 // 250 0 or 1 判定に使用
 // 251^300 合成
@@ -90,7 +92,7 @@ function set_switch(id, bool){
 }
 
 function get_hensu(id){
-  return $gameVariables.value(id);
+  return get_hensu(id);
 }
 
 function get_switch(id){
@@ -162,6 +164,11 @@ function get_enhance(mons_id){
 function get_area_status_value(str){
   var status = get_hensu(127);
   return status[str];
+}
+// areaEvent用に、MV変数にエリア情報を入れる
+function set_area_status_value(){
+  set_hensu(130, get_area_status_value("users_mst_id"));
+
 }
 
 //ajax準備
@@ -407,8 +414,9 @@ function have_mons_id_chose_do(pattern){
       set_switch(221, true);
     }
     set_hensu(hensu_id,set_mons_id);
+    return;
   }
-  
+  set_hensu()
   return set_mons_id;
   // set_area_mons(set_mons_id);
   
@@ -831,10 +839,45 @@ function mons_serif(id){
   return serif;
 }
 
+// DB情報をツクール変数にセットする
+function area_status_set(response){
+  var area_status = [];
+  area_status["id"] = response.id;
+  area_status["name"] = response.name;
+  area_status["point"] = response.point;
+  area_status["level"] = response.level;
+  area_status["users_mst_id"] = response.users_mst_id;
+  area_status["basic_value"] = response.basic_value;
+  area_status["now_value"] = response.now_value;
+  area_status["collection_value"] = response.collection_value;
+  area_status["mons_id"] = response.mons_id;
+  area_status["mons_lv"] = response.mons_lv;
+  area_status["combat_datetime"] = response.combat_datetime;
+  area_status["asset_value"] = response.basic_value * Math.pow(2,response.level);
+  area_status["use_value"] = area_status["asset_value"] / 3;
+  area_status["challenge_value"] = area_status["asset_value"] / 2;
+  area_status["acquisitions_value"] = area_status["asset_value"] * 100;
+  set_hensu(127, area_status);
+  set_hensu(130, area_status["users_mst_id"]);
+  set_hensu(131, area_status["name"]);
+  set_hensu(132, erea_status["mons_id"]);
+  var status = [];
+  status[0] = response.mons_mhp;
+  status[1] = response.mons_mmp;
+  status[2] = response.mons_atk;
+  status[3] = response.mons_def;
+  status[4] = response.mons_mat;
+  status[5] = response.mons_mdf;
+  status[6] = response.mons_agi;
+  status[7] = response.mons_luk;
+  set_hensu(140, status);
+
+}
+
 
 //エリア情報を得る
 function get_area_status(){
-  var area_id = $gameVariables.value(126);
+  var area_id = get_hensu(126);
   var postData = JSON.stringify({"area_id":area_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -850,34 +893,11 @@ function get_area_status(){
                   //登録できたか否かの結果メッセージを変数101に入れ、イベントで表示できる様にしている
                   console.log(area_id);
                   console.log(response);
-                  var area_status = [];
-                  area_status["id"] = response.id;
-                  area_status["name"] = response.name;
-                  area_status["point"] = response.point;
-                  area_status["level"] = response.level;
-                  area_status["users_mst_id"] = response.users_mst_id;
-                  area_status["basic_value"] = response.basic_value;
-                  area_status["now_value"] = response.now_value;
-                  area_status["collection_value"] = response.collection_value;
-                  area_status["mons_id"] = response.mons_id;
-                  area_status["mons_lv"] = response.mons_lv;
-                  area_status["combat_datetime"] = response.combat_datetime;
-                  area_status["add_profit"] = response.basic_value * Math.pow(2,response.level);
-                  area_status["use_value"] = area_status["add_profit"] / 3;
-                  set_hensu(127, area_status);
-                  var status = [];
-                  status[0] = response.mons_mhp;
-                  status[1] = response.mons_mmp;
-                  status[2] = response.mons_atk;
-                  status[3] = response.mons_def;
-                  status[4] = response.mons_mat;
-                  status[5] = response.mons_mdf;
-                  status[6] = response.mons_agi;
-                  status[7] = response.mons_luk;
-                  set_hensu(140, status);
-
+                  area_status_set(response);
+                  
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
+
                   
                 }
               }
@@ -890,17 +910,17 @@ function get_area_status(){
 }
 //資産価値
 function set_asset_value(){
-  var basic_value = $gameVariables.value(129);
-  var level = $gameVariables.value(128);
-  var next_collection = basic_value * Math.pow(2,level);
-  $gameVariables.setValue(132,next_collection);
+  // var basic_value = get_hensu(129);
+  // var level = get_hensu(128);
+  // var next_collection = basic_value * Math.pow(2,level);
+  // $gameVariables.setValue(132,next_collection);
 
 }
 
 //投資
 function investment(){
-  var area_id = $gameVariables.value(126);
-  var user_id = $gameVariables.value(101);
+  var area_id = get_hensu(126);
+  var user_id = get_hensu(101);
   var postData = JSON.stringify({"area_id":area_id,"user_id":user_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -913,15 +933,9 @@ function investment(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(127,response.users_mst_id);
-                  $gameVariables.setValue(128,response.area_level);
-                  $gameVariables.setValue(129,response.area_basic_value);
-                  $gameVariables.setValue(130,response.area_boss);
-                  $gameVariables.setValue(131,response.collection_value);
-                  
-                  $gameVariables.setValue(133,response.name);
-                  
-
+                  var message = "拠点レベルが" + response.level + "に上がりました";
+                  set_hensu(131, response.name);
+                  set_hensu(501, message);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
@@ -937,15 +951,15 @@ function investment(){
 
 //買収
 function acquisitions(){
-  var area_id = $gameVariables.value(126);
-  var user_id = $gameVariables.value(101);
-  var area_user_id = $gameVariables.value(127);
-  var profit = $gameVariables.value(132);
+  var area_id = get_hensu(126);
+  var user_id = get_hensu(101);
+  // var area_user_id = get_hensu(130);
+  // var profit = get_hensu(132);
   var postData = JSON.stringify({
     "area_id":area_id,
     "user_id":user_id,
-    "area_user_id":area_user_id,
-    "profit":profit
+    // "area_user_id":area_user_id,
+    // "profit":profit
   });
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -958,13 +972,7 @@ function acquisitions(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(127,response.users_mst_id);
-                  $gameVariables.setValue(128,response.area_level);
-                  $gameVariables.setValue(129,response.area_basic_value);
-                  $gameVariables.setValue(130,response.area_boss);
-                  $gameVariables.setValue(131,response.collection_value);
-                  
-                  $gameVariables.setValue(133,response.name);
+                  area_status_set(response);
                   
 
                 }else{
@@ -980,10 +988,13 @@ function acquisitions(){
   xmlhr.send(postData);
 }
 //支配
-function occupation(){
-  var area_id = $gameVariables.value(126);
-  var user_id = $gameVariables.value(101);
-  var postData = JSON.stringify({"area_id":area_id,"user_id":user_id});
+function occupation(mons_id){
+  var area_id = get_hensu(126);
+  var user_id = get_hensu(101);
+  var postData = JSON.stringify({
+                                "area_id" : area_id, 
+                                "user_id" : user_id, 
+                                "mons_id" : mons_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
           switch(xmlhr.readyState){
@@ -995,13 +1006,14 @@ function occupation(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(127,response.users_mst_id);
-                  $gameVariables.setValue(128,response.area_level);
-                  $gameVariables.setValue(129,response.area_basic_value);
-                  $gameVariables.setValue(130,response.area_boss);
-                  $gameVariables.setValue(131,response.collection_value);
+                  erea_status_set(response);
+                  // $gameVariables.setValue(127,response.users_mst_id);
+                  // $gameVariables.setValue(128,response.area_level);
+                  // $gameVariables.setValue(129,response.area_basic_value);
+                  // $gameVariables.setValue(130,response.area_boss);
+                  // $gameVariables.setValue(131,response.collection_value);
                   
-                  $gameVariables.setValue(133,response.name);
+                  // $gameVariables.setValue(133,response.name);
                   
 
                 }else{
@@ -1019,8 +1031,8 @@ function occupation(){
 
 //利益の追加
 function add_profit(){
-  var profit = $gameVariables.value(135);
-  var user_id = $gameVariables.value(127);
+  var profit = get_hensu(152);
+  var user_id = get_hensu(130);
   var postData = JSON.stringify({"profit":profit,"user_id":user_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1052,7 +1064,7 @@ function get_profit(collect){
     }else{
       collect = false;
     }
-  var user_id = $gameVariables.value(101);
+  var user_id = get_hensu(101);
   var postData = JSON.stringify({"user_id":user_id,"collect":colect});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1082,7 +1094,7 @@ function get_profit(collect){
 //DBのareaからuserへ、所有する資産価値をセット
 function set_user_asset(){
    //データ転送はダミー
-  var user_id = $gameVariables.value(101);
+  var user_id = get_hensu(101);
   var postData = JSON.stringify({"user_id":user_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1110,7 +1122,7 @@ function set_user_asset(){
 }
 //ランキングを全てのユーザー規模で取得
 function get_all_user_ranking(){
-  var user_id = $gameVariables.value(101);
+  var user_id = get_hensu(101);
   var postData = JSON.stringify({"user_id":user_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1142,7 +1154,7 @@ function get_all_user_ranking(){
 
 //現在の貯金額を取得
 function get_savings(){
-  var user_id = $gameVariables.value(101);
+  var user_id = get_hensu(101);
   var postData = JSON.stringify({"user_id":user_id});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1173,8 +1185,8 @@ function get_savings(){
 
 //貯金をする
 function add_savings(){
-  var user_id = $gameVariables.value(101);
-  var savings = $gameVariables.value(138);
+  var user_id = get_hensu(101);
+  var savings = get_hensu(138);
   var postData = JSON.stringify({"user_id":user_id,"savings":savings});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1203,8 +1215,8 @@ function add_savings(){
 
 //貯金を引き出す
 function takeout_savings(){
-  var user_id = $gameVariables.value(101);
-  var takeout = $gameVariables.value(138);
+  var user_id = get_hensu(101);
+  var takeout = get_hensu(138);
   var postData = JSON.stringify({"user_id":user_id,"takeout":takeout});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1232,7 +1244,7 @@ function takeout_savings(){
 }
 
 function set_playtime(){
-  var user_id = $gameVariables.value(101);
+  var user_id = get_hensu(101);
   var playtime = 0;
   var postData = JSON.stringify({"user_id":user_id,"playtime":playtime});
   xmlhr.onreadystatechange = function(){
@@ -1395,7 +1407,7 @@ function get_mons_status(mons_id){
 	// mons_mdf = $gameActors.actor(mons_id).mdf;
 	// mons_agi = $gameActors.actor(mons_id).agi;
 	// mons_luk = $gameActors.actor(mons_id).luk;
-	// s_mons_enhance = $gameVariables.value(mons_id+1000);
+	// s_mons_enhance = get_hensu(mons_id+1000);
  //    mons_enhance = s_mons_enhance[0];
 	
 }
@@ -1474,13 +1486,13 @@ function set_areaBoss_hp(){
 }
 
 function set_areaBoss_status(){
-  var areaBoss_id = get_hensu(131);
-  var status = get_hensu(140);
-  if (areaBoss_id == 1001){
+  var erea_status = get_hensu(127);
+  var boss_status = get_hensu(140);
+  if (erea_status["mons_id"] == 1001){
     return;
   }
   for (var i = 0; i < 8; i++) {
-    $gameTroop.members()[0].addParam(i, status[i]);
+    $gameTroop.members()[0].addParam(i, boss_status[i]);
   }
 }
 
