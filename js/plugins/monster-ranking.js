@@ -1519,14 +1519,21 @@ function set_areaBoss_hp(boss_hp){
 }
 
 function set_areaBoss_status(){
-  var erea_status = get_hensu(127);
+  var area_status = get_hensu(127);
   var boss_status = get_hensu(140);
-  if (erea_status["mons_id"] == 1001){
+  if (area_status["mons_id"] == 1001){
     return;
   }
   for (var i = 0; i < 8; i++) {
     $gameTroop.members()[0].addParam(i, boss_status[i]);
   }
+  if (area_status["mons_mhp"] == area_status["mons_hp"]){
+    console.log(get_hensu(127));
+    $gameTroop.members()[0].gainHp(area_status["mons_hp"]);
+    var nowHp = $gameTroop.members()[0].hp;
+    console.log(nowHp);
+  }
+  
 }
 
 
