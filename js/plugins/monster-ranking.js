@@ -867,6 +867,7 @@ function area_status_set(response){
   area_status["use_value"] = area_status["asset_value"] / 3;
   area_status["challenge_value"] = area_status["asset_value"] / 2;
   area_status["acquisitions_value"] = area_status["asset_value"] * 100;
+  area_status["mons_hp"] = response.mons_hp * 1;
   console.log("test1");
   console.log(area_status);
   console.log(area_status["users_mst_id"]);
@@ -875,14 +876,14 @@ function area_status_set(response){
   set_hensu(131, area_status["name"]);
   set_hensu(132, area_status["mons_id"]);
   var status = [];
-  status[0] = response.mons_mhp;
-  status[1] = response.mons_mmp;
-  status[2] = response.mons_atk;
-  status[3] = response.mons_def;
-  status[4] = response.mons_mat;
-  status[5] = response.mons_mdf;
-  status[6] = response.mons_agi;
-  status[7] = response.mons_luk;
+  status[0] = response.mons_mhp * 1;
+  status[1] = response.mons_mmp * 1;
+  status[2] = response.mons_atk * 1;
+  status[3] = response.mons_def * 1;
+  status[4] = response.mons_mat * 1;
+  status[5] = response.mons_mdf * 1;
+  status[6] = response.mons_agi * 1;
+  status[7] = response.mons_luk * 1;
   set_hensu(140, status);
 
 }
@@ -1527,9 +1528,9 @@ function set_areaBoss_status(){
   for (var i = 0; i < 8; i++) {
     $gameTroop.members()[0].addParam(i, boss_status[i]);
   }
-  if (area_status["mons_mhp"] == area_status["mons_hp"]){
-    console.log(get_hensu(127));
-    $gameTroop.members()[0].gainHp(area_status["mons_hp"]);
+  if (boss_status[0] == area_status["mons_hp"]){
+    var gainValue = area_status["mons_hp"] - $gameTroop.members()[0].hp;
+    $gameTroop.members()[0].gainHp(gainValue);
     var nowHp = $gameTroop.members()[0].hp;
     console.log(nowHp);
   }
