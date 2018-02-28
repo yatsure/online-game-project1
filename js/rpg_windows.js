@@ -4295,7 +4295,11 @@ Window_Message.prototype.clearFlags = function() {
 };
 
 Window_Message.prototype.numVisibleRows = function() {
-    return 4;
+    var row = 4;
+    if($gameVariables.value(200) > 4) {
+        row = $gameVariables.value(200);
+    }
+    return row;
 };
 
 Window_Message.prototype.update = function() {
@@ -4484,6 +4488,12 @@ Window_Message.prototype.newPage = function(textState) {
     textState.y = 0;
     textState.left = this.newLineX();
     textState.height = this.calcTextHeight(textState, false);
+
+    this.height = 4*45;
+    if($gameVariables.value(200) > 4){
+        this.height = $gameVariables.value(200)*45;
+    }
+    
 };
 
 Window_Message.prototype.loadMessageFace = function() {

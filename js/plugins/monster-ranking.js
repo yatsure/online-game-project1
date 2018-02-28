@@ -12,16 +12,46 @@
 // 140=areaBoss_status配列
 // 151^200 tmp
 // 151=所持金, 152=必要な料金, 153=set_areaBossId, 154=DB_areaBossId
+// 200=メッセージウインドウ行数
 // 201^249 会話文章変数
 // 250 0 or 1 判定に使用
 // 251^300 合成
 // 251=１体目、252=２体目、253=choiceNext,254=nextChoice,255=choice_mons_id,256=choiceNo,
 // 260=result["mons_id"],261=result["enhance"]
+// 301=プレイヤー総資産、302=プレイヤーの順位, 303=get_profit, 
 // 501~504 セリフ
+// 505=ランキング表示, 
 // 601^1000 特に無し
 // 900~1000初召喚かどうかチェック配列(100ずつ)
 // 1000=mons
 // 1001^2000 mons系で使う
+
+
+// メッセージウインドウの行数を変更できるようにする設定(行数は変数200を使うとする)
+    // Window_Message.prototype.newPage = function(textState) {
+    //     this.contents.clear();
+    //     this.resetFontSettings();
+    //     this.clearFlags();
+    //     this.loadMessageFace();
+    //     textState.x = this.newLineX();
+    //     textState.y = 0;
+    //     textState.left = this.newLineX();
+    //     textState.height = this.calcTextHeight(textState, false);
+    // 以下追記
+    //     this.height = 4*45;
+    //     if($gameVariables.value(200) > 4){
+    //         this.height = $gameVariables.value(200)*45;
+    //     }
+    //     
+    // };
+
+    // Window_Message.prototype.numVisibleRows = function() {
+      // 以下ifを追記
+    //     if($gameVariables.value(200) > 4) {
+    //         return $gameVariables.value(200);
+    //     }
+    //     return 4;
+    // };
 
 // 0 : _actor.mhp,
 // 1 : _actor.mmp,
@@ -302,6 +332,7 @@ function user_entry(){
 function gousei_init(){
   set_switch(221, false);
   set_switch(222, false);
+  set_switch(251, false);
   set_hensu(251, 0);
   set_hensu(252, 0);
   set_hensu(253, 0);
@@ -453,14 +484,22 @@ function get_gousei_after_mons(run){
   }
   result["enhance"][0] += get_lebel_bonus(mons_status_2["lv"]) + 1;
   if(result["mons_id"] == mons_id1){
+    console.log("enbance");
+    console.log(result["enhance"][0]);
+    console.log(get_attri_bonus(mons_id2));
     result["enhance"][0] += get_attri_bonus(mons_id2);
+    console.log(result["enhance"][0]);
   }
   var mons_name = $gameActors.actor(result["mons_id"])._name;
   console.log(result["enhance"]);
   set_hensu(260, result["mons_id"]);
   set_hensu(261, result["enhance"][0]);
   set_hensu(262, mons_name);
-  judge_have_double(result["mons_id"]);
+  // 合成mons1とresult_idが違うなら、手持ちとの被り判定
+  if (result["mons_id"] != mons_id1){
+    judge_have_double(result["mons_id"]);
+  }
+  // 召喚結果を見た後、召喚するを実行
   if (run == true){
     recall(result["mons_id"], result["enhance"], remons);
     return;
@@ -508,7 +547,8 @@ function get_attri_bonus(mons_id2){
     case 6: return 2; break;
     case 7: ;
     case 8: return 4; break;
-    case 9: return 8; break;
+    case 9: 
+    case 0:return 8; break;
     default: return 0;
   }
 }
@@ -557,20 +597,16 @@ function get_gousei_mons_id(mons_id1,mons_id2){
 
 }
 
-//召喚するmons_idが手持ちと被っていないかを判定
+//召喚するmons_idが手持ちと被っているか判定
 function judge_have_double(mons_id){
   var result = false;
   var memberCount = $gameParty.size();
   set_switch(251,false);
-  console.log(memberCount);
   for (var i=0; i<memberCount; i++) {
     var party_id = $gameParty.members()[i]._actorId;
     if(party_id == mons_id){
       result = true;
     }
-  }
-  if(get_hensu(251) == mons_id){
-    result = false;
   }
   if(result){
     set_switch(251,true);
@@ -580,22 +616,30 @@ function judge_have_double(mons_id){
 
 //召喚符func
 function recall(mons_id, enhance, remons){
+  // 召喚符か合成かの判定
+  var recall_item = false;
+  var item_id = 0;
+  console.log(mons_id);
+  // mons_idがnullなら、召喚符と言うこと
   if (mons_id == null){
-    var item_id = $gameParty.lastItem().id;
-    mons_id = item_id - 100;
+    item_id = $gameParty.lastItem().id;
+    mons_id = item_id;
+    recall_item = true;
+    if($gameParty.size() >= 8){
+      newPage_message();
+      set_message("メンバーがいっぱいの為、召喚できません。");
+      $gameParty.gainItem($dataItems[item_id], 1);
+      return;
+    }
   }
   var check =  judge_have_double(mons_id);
-  if(check){
+  if(check && recall_item){
     newPage_message();
     set_message("既にメンバーに居るので召喚できません。");
+    $gameParty.gainItem($dataItems[item_id], 1);
     return;
   }
-  $gameActors.actor(mons_id).setup(mons_id);
-  $gameParty.addActor(mons_id);
-  var mons_name = get_actor_name(mons_id);
-  newPage_message();
-  set_message(mons_serif(mons_id));
-  reset_mons_status(mons_id);
+  // 合成時に合成モンスターをメンバーから外す
   if (remons != null){
     for (var i = 0; i < remons.length; i++){
       console.log("test" + remons[i]);
@@ -603,8 +647,16 @@ function recall(mons_id, enhance, remons){
       remove_actor(remons[i]);
     }
   }
+  newPage_message();
+  set_message(mons_serif(mons_id));
+  reset_mons_status(mons_id);
   add_actor(mons_id);
-  set_gouseimons_status(mons_id, enhance);
+  
+  if(recall_item == false){
+    set_gouseimons_status(mons_id, enhance);
+  }
+  
+  
 
 }
 
@@ -1095,7 +1147,7 @@ function get_profit(collect){
       collect = false;
     }
   var user_id = get_hensu(101);
-  var postData = JSON.stringify({"user_id":user_id,"collect":colect});
+  var postData = JSON.stringify({"user_id":user_id,"collect":collect});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
           switch(xmlhr.readyState){
@@ -1107,7 +1159,7 @@ function get_profit(collect){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(136,response.profit);
+                  $gameVariables.setValue(303,response.profit * 1);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
@@ -1167,8 +1219,8 @@ function get_all_user_ranking(){
                   var response = JSON.parse(xmlhr.responseText);
                   var ranking = response[user_id];
                   
-                  $gameVariables.setValue(1001,ranking.total_asset);
-                  $gameVariables.setValue(1002,ranking.rank);
+                  $gameVariables.setValue(301,ranking.total_asset);
+                  $gameVariables.setValue(302,ranking.rank);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
@@ -1178,6 +1230,52 @@ function get_all_user_ranking(){
           }
   };
   xmlhr.open("POST","http://yatsurecreate.com/api/public/apitest/get_all_user_ranking");
+  xmlhr.setRequestHeader('Content-Type', 'application/json');
+  xmlhr.send(postData);
+}
+
+// 任意のランキング取得
+function get_ranking(code){
+  if (code == null) {
+    code = "all";
+  }
+  var user_id = get_hensu(101);
+  var postData = JSON.stringify({"user_id":user_id, "code":code});
+  xmlhr.onreadystatechange = function(){
+          console.log('changestart');
+          switch(xmlhr.readyState){
+            case 4:
+              if(xmlhr.status == 0){
+                console.log('通信失敗');
+              }else{
+                if((200 <= xmlhr.status&&xmlhr.status<300)||(xmlhr.status==304)){
+                  console.log("受信:"+xmlhr.responseText);
+                  $gameSwitches.setValue(202,true);
+                  var message = "現在集計中です";
+                  console.log(xmlhr.responseText);
+                  if (xmlhr.responseText != "") {
+                    message = "";
+                    var response = JSON.parse(xmlhr.responseText);
+                    for (var i = 1; i <= 10; i++) {
+                      if(response[i] != null) {
+                        message += i + "位：" + response[i]["name"] + "さん" + "総資産：" + response[i]["total_asset"] + "G";
+                      }
+                      message += "\n";
+                    }
+                  }
+                    // response.forEach(function(value, index){
+                    //   message += index + "位：" + value["name"] + "さん" + "総資産：" + value["total_asset"] + "G" + "\n";
+                    // });
+                  
+                  $gameVariables.setValue(505, message);
+                }else{
+                  console.log("その他の応答:"+xmlhr.status);
+                }
+              }
+              break;
+          }
+  };
+  xmlhr.open("POST","http://yatsurecreate.com/api/public/apitest/get_ranking");
   xmlhr.setRequestHeader('Content-Type', 'application/json');
   xmlhr.send(postData);
 }
