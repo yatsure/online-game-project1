@@ -18,7 +18,7 @@
 // 251^300 合成
 // 251=１体目、252=２体目、253=choiceNext,254=nextChoice,255=choice_mons_id,256=choiceNo,
 // 260=result["mons_id"],261=result["enhance"]
-// 301=プレイヤー総資産、302=プレイヤーの順位, 303=get_profit, 
+// 301=プレイヤー総資産、302=プレイヤーの順位, 303=get_profit, 304=現貯金額, 305=add貯金, 306=引き出し金額
 // 501~504 セリフ
 // 505=ランキング表示, 
 // 601^1000 特に無し
@@ -510,7 +510,7 @@ function get_gousei_after_mons(run){
 
 //モンスターの属性判定
 function judge_mons_attribute(mons_id){
-  var result = mons_id % 100 / 10;
+  var result = (mons_id - 1) % 100 / 10;
   return Math.floor(result);
 }
 //モンスターのランク判定
@@ -547,8 +547,7 @@ function get_attri_bonus(mons_id2){
     case 6: return 2; break;
     case 7: ;
     case 8: return 4; break;
-    case 9: 
-    case 0:return 8; break;
+    case 9: return 8; break;
     default: return 0;
   }
 }
@@ -654,6 +653,7 @@ function recall(mons_id, enhance, remons){
   
   if(recall_item == false){
     set_gouseimons_status(mons_id, enhance);
+    $gameActors.actor(mons_id).recoverAll();
   }
   
   
@@ -1295,7 +1295,7 @@ function get_savings(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(137,response.savings);
+                  $gameVariables.setValue(304,response.savings);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
@@ -1314,7 +1314,8 @@ function get_savings(){
 //貯金をする
 function add_savings(){
   var user_id = get_hensu(101);
-  var savings = get_hensu(138);
+  var savings = get_hensu(305);
+  console.log(savings);
   var postData = JSON.stringify({"user_id":user_id,"savings":savings});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1327,7 +1328,7 @@ function add_savings(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(137,response.savings);
+                  $gameVariables.setValue(304,response.savings);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
@@ -1344,7 +1345,7 @@ function add_savings(){
 //貯金を引き出す
 function takeout_savings(){
   var user_id = get_hensu(101);
-  var takeout = get_hensu(138);
+  var takeout = get_hensu(306);
   var postData = JSON.stringify({"user_id":user_id,"takeout":takeout});
   xmlhr.onreadystatechange = function(){
           console.log('changestart');
@@ -1357,7 +1358,7 @@ function takeout_savings(){
                   console.log("受信:"+xmlhr.responseText);
                   $gameSwitches.setValue(202,true);
                   var response = JSON.parse(xmlhr.responseText);
-                  $gameVariables.setValue(139,response.savings);
+                  $gameVariables.setValue(304,response.savings);
                 }else{
                   console.log("その他の応答:"+xmlhr.status);
                   
